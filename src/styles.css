@@ -144,7 +144,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .prompt { font-size: 1.15rem; font-weight: 500; }
 .repeat-target { background: var(--surface-2); padding: 10px 12px; border-radius: 12px; }
 .hint { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 0.95rem; }
-.error { background: var(--bad-soft); color: var(--bad); padding: 10px 12px; border-radius: 12px; }
+.error { background: var(--bad-soft); color: var(--bad); padding: 10px 12px; border-radius: 12px; display: flex; flex-direction: column; gap: 8px; }
+.error .ghost { align-self: flex-start; color: var(--text); font-weight: 600; }
 .placeholder { padding: 24px; text-align: center; border: 1px dashed var(--border); border-radius: var(--radius); }
 
 .mic-area { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 8px 0; }
@@ -162,6 +163,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
   100% { box-shadow: 0 0 0 0 transparent; }
 }
 .analyzing { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 28px 0; color: var(--muted); }
+.slow-note { display: block; margin-top: 2px; }
+.spinner { flex: none; }
 .spinner { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--surface-2); border-top-color: var(--accent); animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .type-box { display: flex; flex-direction: column; gap: 8px; }

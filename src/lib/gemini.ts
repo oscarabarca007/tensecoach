@@ -61,7 +61,8 @@ const SCHEMA = {
 };
 
 export class GeminiError extends Error {
-  constructor(message: string, public status?: number) {
+  /** retriable: the same request may succeed later (overload, network), so the UI offers "Reintentar". */
+  constructor(message: string, public status?: number, public retriable = false) {
     super(message);
   }
 }
@@ -72,33 +73,92 @@ export interface Part {
   inlineData?: { mimeType: string; data: string };
 }
 
-async function call(apiKey: string, model: string, body: unknown): Promise<string> {
-  if (!apiKey) throw new GeminiError("Falta tu API key de Gemini. Agrégala en Ajustes.");
-  let res: Response;
+/** Similar free-tier model to try when the chosen one stays overloaded. Both accept audio. */
+const FALLBACK: Record<string, string> = {
+  "gemini-3.1-flash-lite": "gemini-3.5-flash-lite",
+  "gemini-3.5-flash-lite": "gemini-3.1-flash-lite",
+  "gemini-3.8-flash": "gemini-3.1-flash-lite",
+};
+
+const TRANSIENT = new Set([500, 502, 503, 504]);
+const BACKOFF_MS = [1000, 2500, 5000];
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Seconds Google asks us to wait on a 429 (RetryInfo), if any. */
+function retryDelaySeconds(json: any): number | null {
+  const info = (json?.error?.details ?? []).find((d: any) => String(d?.["@type"]).endsWith("RetryInfo"));
+  const s = parseFloat(String(info?.retryDelay ?? ""));
+  return Number.isFinite(s) ? s : null;
+}
+
+async function post(apiKey: string, model: string, body: unknown): Promise<{ res: Response; json: any } | null> {
   try {
-    res = await fetch(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
+    const res = await fetch(`${ENDPOINT}/${encodeURIComponent(model)}:generateContent`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
       body: JSON.stringify(body),
     });
+    return { res, json: await res.json().catch(() => ({})) };
   } catch {
-    throw new GeminiError("Sin conexión con Gemini. Revisa tu internet.");
+    return null; // network error
   }
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    const msg: string = json?.error?.message ?? res.statusText;
-    if (res.status === 429)
-      throw new GeminiError("Llegaste al límite gratuito de Gemini (por minuto o por día). Espera un momento o cambia de modelo en Ajustes.", 429);
-    if (res.status === 400 && /api key/i.test(msg)) throw new GeminiError("La API key no es válida. Revísala en Ajustes.", 400);
-    if (res.status === 403) throw new GeminiError("La API key no tiene permiso para este modelo.", 403);
-    if (res.status === 404) throw new GeminiError(`El modelo «${model}» no existe o no está disponible para tu cuenta.`, 404);
-    throw new GeminiError(`Gemini respondió ${res.status}: ${msg}`, res.status);
+}
+
+/**
+ * Sends the request, retrying overloads (5xx) and network errors with backoff, honouring short
+ * per-minute 429 waits, and finally trying a sibling model before giving up.
+ */
+async function call(apiKey: string, model: string, body: unknown): Promise<string> {
+  if (!apiKey) throw new GeminiError("Falta tu API key de Gemini. Agrégala en Ajustes.");
+  const models = [model, ...(FALLBACK[model] ? [FALLBACK[model]] : [])];
+  let last: { res: Response; json: any } | null = null;
+
+  for (const m of models) {
+    for (let attempt = 0; attempt <= BACKOFF_MS.length; attempt++) {
+      last = await post(apiKey, m, body);
+      if (last?.res.ok) return extractText(last.json);
+      const status = last?.res.status;
+      if (status === 429) {
+        const wait = retryDelaySeconds(last!.json);
+        // A short wait means the per-minute limit; a long/missing one usually means the daily quota.
+        if (wait !== null && wait <= 20 && attempt === 0) {
+          await sleep(wait * 1000 + 500);
+          continue;
+        }
+        break; // try the fallback model, it has its own quota
+      }
+      if (last && !TRANSIENT.has(status!)) {
+        if (m !== model && status === 404) break; // fallback not available for this account
+        throw toError(last.res.status, last.json, m);
+      }
+      if (attempt < BACKOFF_MS.length) await sleep(BACKOFF_MS[attempt] * (0.8 + Math.random() * 0.4));
+    }
   }
+
+  if (!last) throw new GeminiError("Sin conexión con Gemini. Revisa tu internet y toca «Reintentar».", undefined, true);
+  if (last.res.status === 429)
+    throw new GeminiError("Llegaste al límite gratuito de Gemini por hoy o por minuto. Espera un rato o cambia de modelo en Ajustes.", 429, true);
+  throw new GeminiError(
+    "Los servidores de Gemini están saturados en este momento (lo intenté varias veces y con otro modelo). Espera un minuto y toca «Reintentar»: tu grabación no se pierde.",
+    last.res.status,
+    true
+  );
+}
+
+function toError(status: number, json: any, model: string): GeminiError {
+  const msg: string = json?.error?.message ?? "";
+  if (status === 400 && /api key/i.test(msg)) return new GeminiError("La API key no es válida. Revísala en Ajustes.", 400);
+  if (status === 403) return new GeminiError("La API key no tiene permiso para este modelo.", 403);
+  if (status === 404) return new GeminiError(`El modelo «${model}» no existe o no está disponible para tu cuenta.`, 404);
+  return new GeminiError(`Gemini respondió ${status}: ${msg}`, status);
+}
+
+function extractText(json: any): string {
   const parts: Part[] = json?.candidates?.[0]?.content?.parts ?? [];
   const text = parts.filter((p) => !p.thought && p.text).map((p) => p.text).join("");
   if (!text) {
     const reason = json?.candidates?.[0]?.finishReason ?? json?.promptFeedback?.blockReason ?? "respuesta vacía";
-    throw new GeminiError(`Gemini no devolvió resultado (${reason}). Intenta de nuevo.`);
+    throw new GeminiError(`Gemini no devolvió resultado (${reason}). Toca «Reintentar».`, undefined, true);
   }
   return text;
 }
@@ -120,7 +180,7 @@ export async function generateJson<T>(
   try {
     return JSON.parse(raw) as T;
   } catch {
-    throw new GeminiError("La respuesta de Gemini no se pudo leer. Intenta de nuevo.");
+    throw new GeminiError("La respuesta de Gemini no se pudo leer. Toca «Reintentar».", undefined, true);
   }
 }
 

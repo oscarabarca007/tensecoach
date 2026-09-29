@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { WordCat } from "../data/words";
 import { TENSES, type TenseId } from "../data/tenses";
+import { Analyzing } from "../components/Analyzing";
 import { WordCard } from "../components/WordCard";
 import { ScoreBadge } from "../components/Feedback";
 import { GeminiError } from "../lib/gemini";
@@ -46,26 +47,33 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
   const [hint, setHint] = useState(false);
   const [results, setResults] = useState<{ word: string; passed: boolean }[]>([]);
   const [counted, setCounted] = useState(false);
+  const [retry, setRetry] = useState<(() => void) | null>(null);
 
   const challenge = useMemo(() => TENSE_CHALLENGES[Math.floor(Math.random() * TENSE_CHALLENGES.length)], [idx]);
   const isReview = item?.kind === "review";
 
   const mic = useRecorder(
     (audio) => void (step === "pronounce" ? onPronounce(audio) : onUse({ audio })),
-    (msg) => setError(msg)
+    (msg) => {
+      setError(msg);
+      setRetry(null);
+    }
   );
 
-  function fail(e: unknown) {
+  /** Shows the error; transient Gemini failures keep `again` so «Reintentar» resends the same answer. */
+  function fail(e: unknown, again: () => void) {
     setError(e instanceof GeminiError ? e.message : `Algo falló: ${(e as Error)?.message ?? e}`);
+    if (e instanceof GeminiError && e.retriable) setRetry(() => again);
   }
 
   async function onPronounce(audio: Recording) {
     setBusy(true);
     setError("");
+    setRetry(null);
     try {
       setPron(await checkPronunciation(settings.apiKey, settings.model, item.word, audio));
     } catch (e) {
-      fail(e);
+      fail(e, () => void onPronounce(audio));
     } finally {
       setBusy(false);
     }
@@ -74,6 +82,7 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
   async function onUse(answer: { audio?: Recording; text?: string }) {
     setBusy(true);
     setError("");
+    setRetry(null);
     try {
       const r = await checkUsage(settings.apiKey, settings.model, item.word, answer, isReview, TENSES[challenge].name);
       if (!r.understood) {
@@ -93,7 +102,7 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
         setResults((list) => [...list, { word: item.word.word, passed }]);
       }
     } catch (e) {
-      fail(e);
+      fail(e, () => void onUse(answer));
     } finally {
       setBusy(false);
     }
@@ -106,6 +115,7 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
     setPron(null);
     setUsage(null);
     setError("");
+    setRetry(null);
     setHint(false);
     setTyping(false);
     setCounted(false);
@@ -132,7 +142,7 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
   const w = item.word;
   const micBlock = (label: string) =>
     busy ? (
-      <div className="analyzing"><span className="spinner" /> Escuchando con atención…</div>
+      <Analyzing label="Escuchando con atención…" />
     ) : (
       <div className="mic-area">
         <button
@@ -165,7 +175,14 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
           {isReview && !usage && !hint && (
             <button className="link small" onClick={() => setHint(true)}>💡 Mostrar la palabra</button>
           )}
-          {error && <p className="error" role="alert">{error}</p>}
+          {error && (
+            <div className="error" role="alert">
+              <p>{error}</p>
+              {retry && !busy && !mic.recording && (
+                <button className="ghost" onClick={retry}>↻ Reintentar</button>
+              )}
+            </div>
+          )}
 
           {step === "learn" && (
             <div className="card">

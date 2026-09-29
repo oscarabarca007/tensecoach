@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { GROUPS, scenariosFor, shuffle, type GroupId } from "../data/scenarios";
 import { TENSES, type TenseId } from "../data/tenses";
+import { Analyzing } from "../components/Analyzing";
 import { Feedback } from "../components/Feedback";
 import { Timeline } from "../components/Timeline";
 import { analyze, GeminiError, type Analysis } from "../lib/gemini";
-import { Recorder } from "../lib/recorder";
+import { Recorder, type Recording } from "../lib/recorder";
 import { usePracticeClock } from "../lib/hooks";
 import { addAttempt, addMistakes, type Settings } from "../lib/storage";
 import { stopSpeaking } from "../lib/tts";
@@ -12,6 +13,8 @@ import { stopSpeaking } from "../lib/tts";
 type Phase = "ready" | "recording" | "analyzing" | "feedback";
 const MAX_SECONDS = 60;
 const SESSION_LEN = 8;
+
+type EvalInput = { audio?: Recording; text?: string };
 
 export function Practice({
   group,
@@ -33,6 +36,7 @@ export function Practice({
   const [repeatTarget, setRepeatTarget] = useState("");
   const repeatRef = useRef("");
   const [error, setError] = useState("");
+  const [retryInput, setRetryInput] = useState<EvalInput | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const [scores, setScores] = useState<number[]>([]);
   const rec = useRef<Recorder | null>(null);
@@ -52,6 +56,7 @@ export function Practice({
 
   async function startRecording() {
     setError("");
+    setRetryInput(null);
     stopSpeaking();
     const r = new Recorder();
     try {
@@ -77,27 +82,35 @@ export function Practice({
     rec.current = null;
     if (!r) return;
     setPhase("analyzing");
+    let audio: Recording;
     try {
-      const audio = await r.stop();
-      if (audio.seconds < 0.8) {
-        setError("La grabación fue muy corta. Mantén el micrófono activo mientras hablas.");
-        setPhase(result ? "feedback" : "ready");
-        return;
-      }
-      await evaluate({ audio });
+      audio = await r.stop();
     } catch (e) {
       fail(e);
+      return;
     }
+    if (audio.seconds < 0.8) {
+      setError("La grabación fue muy corta. Mantén el micrófono activo mientras hablas.");
+      setPhase(result ? "feedback" : "ready");
+      return;
+    }
+    await run({ audio });
   }
 
-  async function submitTyped() {
-    if (!typed.trim()) return;
+  function submitTyped() {
+    if (typed.trim()) void run({ text: typed.trim() });
+  }
+
+  /** Evaluates an answer; if Gemini fails transiently, keeps it so «Reintentar» can resend it. */
+  async function run(input: EvalInput) {
     setPhase("analyzing");
     setError("");
+    setRetryInput(null);
     try {
-      await evaluate({ text: typed.trim() });
+      await evaluate(input);
     } catch (e) {
       fail(e);
+      if (e instanceof GeminiError && e.retriable) setRetryInput(input);
     }
   }
 
@@ -106,7 +119,7 @@ export function Practice({
     setPhase(result ? "feedback" : "ready");
   }
 
-  async function evaluate(input: { audio?: Awaited<ReturnType<Recorder["stop"]>>; text?: string }) {
+  async function evaluate(input: EvalInput) {
     const repeatOf = repeatRef.current || undefined;
     const a = await analyze({
       apiKey: settings.apiKey,
@@ -154,6 +167,7 @@ export function Practice({
     repeatRef.current = "";
     setHint(false);
     setError("");
+    setRetryInput(null);
   }
 
   function repeat() {
@@ -216,10 +230,17 @@ export function Practice({
             )}
           </div>
 
-          {error && <p className="error" role="alert">{error}</p>}
+          {error && (
+            <div className="error" role="alert">
+              <p>{error}</p>
+              {retryInput && phase !== "analyzing" && (
+                <button className="ghost" onClick={() => void run(retryInput)}>↻ Reintentar</button>
+              )}
+            </div>
+          )}
 
           {phase === "analyzing" ? (
-            <div className="analyzing"><span className="spinner" /> Analizando tus tiempos verbales…</div>
+            <Analyzing label="Analizando tus tiempos verbales…" />
           ) : typing && !recordingNow ? (
             <div className="type-box">
               <textarea
