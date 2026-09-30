@@ -7,6 +7,8 @@ export interface Word {
   word: string;
   pos: string; // n, v, adj, adv, phr v, expr
   es: string;
+  /** Simple learner-style definition in English. Optional for words generated before it existed. */
+  def?: string;
   /** Approximate pronunciation for Spanish speakers; CAPS = stressed syllable. */
   say: string;
   example: string;
@@ -16,11 +18,65 @@ export interface Word {
   custom?: boolean;
 }
 
+const DEFS: Record<string, string> = {
+  deadline: "the latest time or date by which something must be finished",
+  milestone: "an important point in a project that shows how much progress has been made",
+  deliverable: "a product, document or result that must be delivered as part of a project",
+  "scope creep": "the slow, uncontrolled growth of a project's scope beyond what was agreed",
+  roadmap: "a high-level plan that shows the main goals and steps over time",
+  "lead time": "the time between ordering or starting something and receiving it",
+  bottleneck: "a point in a process where work slows down or gets stuck",
+  workload: "the amount of work a person or team has to do",
+  prioritize: "to decide which tasks are most important and do them first",
+  allocate: "to give time, money or people to a particular task",
+  feasible: "possible and practical to do",
+  "on track": "progressing as planned and likely to finish on time",
+  "behind schedule": "later than planned",
+  issue: "a problem that is affecting the project right now",
+  blocker: "something that stops work from moving forward",
+  workaround: "a temporary way to avoid a problem without really fixing it",
+  mitigate: "to make a risk or problem less serious or less likely",
+  escalate: "to pass a problem to someone with more authority",
+  "contingency plan": "a backup plan to use if something goes wrong",
+  "root cause": "the main underlying reason why a problem happened",
+  setback: "a problem that delays progress",
+  likelihood: "how probable it is that something will happen",
+  stakeholder: "a person or group that is affected by or interested in a project",
+  "buy-in": "agreement and support for a plan from the people involved",
+  align: "to agree on the same goals, priorities or understanding",
+  "follow up": "to contact someone again or take further action on something",
+  "push back": "to resist or disagree with a request, plan or decision",
+  "sign off": "to give official approval to something",
+  "heads-up": "an early warning about something that is going to happen",
+  "keep in the loop": "to keep someone informed about what is happening",
+  "reach out": "to contact someone, usually to ask for help or information",
+  actually: "in fact; used to correct something or add surprising information",
+  eventually: "in the end, after a long time or after many problems",
+  agenda: "a list of topics to discuss in a meeting",
+  "action item": "a specific task that someone must do after a meeting",
+  "wrap up": "to finish or conclude something",
+  "touch base": "to talk briefly with someone to check how things are going",
+  takeaway: "a key point or lesson to remember",
+  "run late": "to be behind the planned time",
+  budget: "the amount of money available for something",
+  overrun: "the amount by which the cost or time goes over the plan",
+  forecast: "a prediction of future results, or to make that prediction",
+  "cost-effective": "giving good results for the money spent",
+  headcount: "the number of people working in a team or company",
+  backlog: "a prioritized list of work that still needs to be done",
+  estimate: "to calculate approximately how much time, money or effort something will take",
+  throughput: "the amount of work a team completes in a period of time",
+  ship: "to release a product or feature to users",
+  "lessons learned": "knowledge gained from experience that helps future projects",
+  streamline: "to make a process simpler and more efficient",
+};
+
 const W = (word: string, pos: string, es: string, say: string, cat: WordCat, example: string, tip?: string): Word => ({
   id: word.toLowerCase().replace(/[^a-z]+/g, "-").replace(/^-|-$/g, ""),
   word,
   pos,
   es,
+  def: DEFS[word],
   say,
   cat,
   example,

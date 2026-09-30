@@ -1,12 +1,15 @@
 import type { TenseId } from "./tenses";
 
-export type Context = "Daily" | "Status report" | "Riesgos" | "Retro" | "Stakeholders" | "Planning" | "Entrevista";
+export type Context = "Daily" | "Status report" | "Risks" | "Retro" | "Stakeholders" | "Planning" | "Interview";
 
 export interface Scenario {
   id: string;
   group: GroupId;
   context: Context;
-  /** What to say, in Spanish, without naming the tense. */
+  /**
+   * What to say, in English. Written as facts/notes plus a task so the wording
+   * doesn't hand over the target verb form.
+   */
   prompt: string;
   /** Optional sentence starter shown only as a hint. */
   starter?: string;
@@ -26,7 +29,7 @@ export const GROUPS: Group[] = [
   {
     id: "ps_pp",
     title: "Past simple vs Present perfect",
-    subtitle: "«I finished» o «I have finished»",
+    subtitle: "«I finished» or «I have finished»?",
     tenses: ["past_simple", "present_perfect"],
   },
   {
@@ -38,31 +41,31 @@ export const GROUPS: Group[] = [
   {
     id: "past_cont",
     title: "Past simple vs Past continuous",
-    subtitle: "Lo que pasaba cuando algo ocurrió",
+    subtitle: "What was going on when something happened",
     tenses: ["past_simple", "past_continuous"],
   },
   {
     id: "pres",
     title: "Present simple vs continuous",
-    subtitle: "Rutina vs lo que pasa ahora",
+    subtitle: "Routines vs what's happening now",
     tenses: ["present_simple", "present_continuous"],
   },
   {
     id: "future",
     title: "Will vs going to vs -ing",
-    subtitle: "Decisiones, planes y citas",
+    subtitle: "Decisions, plans and appointments",
     tenses: ["future_will", "future_going_to", "future_present_continuous"],
   },
   {
     id: "past_perf",
     title: "Past perfect",
-    subtitle: "El pasado del pasado",
+    subtitle: "The past before the past",
     tenses: ["past_perfect", "past_simple"],
   },
   {
     id: "cond",
-    title: "Condicionales",
-    subtitle: "Real (if + will) vs hipotético (if + would)",
+    title: "Conditionals",
+    subtitle: "Real (if + will) vs imaginary (if + would)",
     tenses: ["conditional_first", "conditional_second"],
   },
 ];
@@ -78,63 +81,63 @@ const S = (
 
 export const SCENARIOS: Scenario[] = [
   // Past simple vs present perfect
-  S("ps1", "ps_pp", "Daily", ["past_simple"], "En el daily, cuenta qué hiciste ayer: terminaste el cronograma y te reuniste con el equipo de QA.", "Yesterday I…"),
-  S("ps2", "ps_pp", "Status report", ["present_perfect"], "Tu jefe pregunta por el avance. Di que esta semana ya completaron 3 de los 5 entregables (la semana aún no termina).", "So far this week, we…"),
-  S("ps3", "ps_pp", "Entrevista", ["present_perfect", "past_simple"], "Te preguntan si alguna vez has gestionado un proyecto de más de un millón de dólares. Responde que sí y di cuándo fue y para qué cliente.", "Yes, I have… It was in…"),
-  S("ps4", "ps_pp", "Stakeholders", ["past_simple"], "Explica que el cliente aprobó el alcance el lunes pasado y firmó el acta dos días después.", "The client…"),
-  S("ps5", "ps_pp", "Riesgos", ["present_perfect"], "Informa que todavía no han recibido la factura del proveedor y que ya le enviaste dos recordatorios.", "We haven't…"),
-  S("ps6", "ps_pp", "Daily", ["present_perfect"], "Da la buena noticia: el equipo acaba de terminar la migración de datos.", "Good news: the team has just…"),
-  S("ps7", "ps_pp", "Retro", ["past_simple"], "En la retrospectiva, cuenta qué salió mal en el sprint pasado: la demo falló porque el ambiente de pruebas se cayó.", "Last sprint, the demo…"),
-  S("ps8", "ps_pp", "Status report", ["present_perfect", "past_simple"], "Di que ya hablaste con el sponsor sobre el presupuesto. Luego aclara que la reunión fue esta mañana a las 9.", "I've already… We met…"),
+  S("ps1", "ps_pp", "Daily", ["past_simple"], "Stand-up meeting. Your notes from yesterday: project schedule — finished; meeting with the QA team — done. Give the team your update about yesterday.", "Yesterday I…"),
+  S("ps2", "ps_pp", "Status report", ["present_perfect"], "Your manager asks about progress. It's Wednesday: 3 of this week's 5 deliverables are complete, and the week isn't over. Report your progress so far.", "So far this week, we…"),
+  S("ps3", "ps_pp", "Interview", ["present_perfect", "past_simple"], "Interview question about your experience with projects over one million dollars. Your answer: yes — one for a bank, in 2023. Answer and give the details.", "Yes, I have… It was in…"),
+  S("ps4", "ps_pp", "Stakeholders", ["past_simple"], "Stakeholder update. Facts: scope approval by the client — last Monday; project charter signature — two days later. Share the news.", "The client…"),
+  S("ps5", "ps_pp", "Risks", ["present_perfect"], "Risk review. Vendor invoice: still not received. Reminders sent by you so far: two. Explain the situation.", "We haven't…"),
+  S("ps6", "ps_pp", "Daily", ["present_perfect"], "Good news from a few minutes ago: the data migration is complete. Announce it to the team.", "Good news: the team has just…"),
+  S("ps7", "ps_pp", "Retro", ["past_simple"], "Retrospective. Topic: last sprint's demo. Problem: it failed because of a crash in the test environment. Explain what went wrong.", "Last sprint, the demo…"),
+  S("ps8", "ps_pp", "Status report", ["present_perfect", "past_simple"], "Your boss asks about the budget conversation with the sponsor. Status: already done — the meeting was this morning at 9. Answer your boss.", "I've already… We met…"),
 
   // Since / for
-  S("sf1", "since_for", "Entrevista", ["present_perfect_continuous"], "Di que trabajas en este proyecto desde enero.", "I…"),
-  S("sf2", "since_for", "Status report", ["present_perfect_continuous"], "Explica que el equipo lleva dos semanas probando la nueva versión y todavía no termina.", "The team…"),
-  S("sf3", "since_for", "Stakeholders", ["present_perfect"], "Di que conoces al sponsor desde hace cinco años.", "I…"),
-  S("sf4", "since_for", "Retro", ["present_perfect_continuous"], "Explica por qué el equipo está cansado: llevan toda la semana haciendo horas extra.", "The team is tired because…"),
-  S("sf5", "since_for", "Daily", ["present_perfect"], "Di cuántos tickets has cerrado hoy: doce, y que aún te quedan tres.", "Today I…"),
-  S("sf6", "since_for", "Entrevista", ["present_perfect"], "Cuenta cuánto tiempo llevas siendo PM: ocho años.", "I…"),
-  S("sf7", "since_for", "Riesgos", ["present_perfect_continuous"], "Avisa que llevas desde el lunes esperando la respuesta del área legal.", "I…"),
+  S("sf1", "since_for", "Interview", ["present_perfect_continuous"], "Interview. Your start date on the current project: January. You're still on it today. Tell them how long.", "I…"),
+  S("sf2", "since_for", "Status report", ["present_perfect_continuous"], "Status report. Testing of the new version: started two weeks ago, still in progress. Explain the situation.", "The team…"),
+  S("sf3", "since_for", "Stakeholders", ["present_perfect"], "You first met the sponsor five years ago and you're still in touch. Tell the group how long you two go back.", "I…"),
+  S("sf4", "since_for", "Retro", ["present_perfect_continuous"], "Retrospective. The team is exhausted. Reason: overtime every day since Monday, and it's still going on. Explain why they're tired.", "The team is tired because…"),
+  S("sf5", "since_for", "Daily", ["present_perfect"], "Stand-up. Tickets closed today so far: 12. Tickets left: 3. Give your update.", "Today I…"),
+  S("sf6", "since_for", "Interview", ["present_perfect"], "Interview. You started working as a project manager eight years ago and it's still your job. Tell them how long.", "I…"),
+  S("sf7", "since_for", "Risks", ["present_perfect_continuous"], "Escalation. Your question to the legal team: sent on Monday. Answer: still pending. Explain the delay.", "I…"),
 
   // Past simple vs past continuous
-  S("pc1", "past_cont", "Riesgos", ["past_continuous", "past_simple"], "Explica qué estabas haciendo cuando el servidor de producción se cayó.", "When the server went down, I…"),
-  S("pc2", "past_cont", "Retro", ["past_continuous", "past_simple"], "Cuenta que mientras el equipo revisaba los requisitos, el cliente cambió el alcance.", "While the team…"),
-  S("pc3", "past_cont", "Stakeholders", ["past_continuous"], "Di que ayer a las 3 pm estabas presentando el informe al comité, por eso no contestaste la llamada.", "Yesterday at 3 pm…"),
-  S("pc4", "past_cont", "Retro", ["past_continuous", "past_simple"], "Describe qué pasaba en la reunión cuando llegó el director: todos discutían sobre las prioridades.", "When the director arrived…"),
-  S("pc5", "past_cont", "Daily", ["past_simple"], "Resume la secuencia de ayer: revisaste el backlog, actualizaste el tablero y enviaste las minutas.", "Yesterday I…"),
-  S("pc6", "past_cont", "Riesgos", ["past_continuous", "past_simple"], "Explica que el proveedor estaba instalando el equipo cuando descubrieron un problema eléctrico.", "The vendor…"),
+  S("pc1", "past_cont", "Risks", ["past_continuous", "past_simple"], "Incident report. The production server crashed at 10:15. Your activity at that exact moment: a client demo. Explain the situation to your boss.", "When the server went down, I…"),
+  S("pc2", "past_cont", "Retro", ["past_continuous", "past_simple"], "Retrospective. In the middle of the team's requirements review, the client changed the scope. Describe what happened.", "While the team…"),
+  S("pc3", "past_cont", "Stakeholders", ["past_continuous"], "Your boss called yesterday at 3 pm and you missed it. Your activity at 3 pm: presenting the report to the committee. Explain why you didn't answer.", "Yesterday at 3 pm…"),
+  S("pc4", "past_cont", "Retro", ["past_continuous", "past_simple"], "Describe the scene: the director walked into the meeting in the middle of a heated argument about priorities.", "When the director arrived…"),
+  S("pc5", "past_cont", "Daily", ["past_simple"], "Stand-up. Yesterday, in order: 1) backlog review, 2) board update, 3) meeting minutes to everyone. Tell the team.", "Yesterday I…"),
+  S("pc6", "past_cont", "Risks", ["past_continuous", "past_simple"], "Risk report. In the middle of the vendor's equipment installation, the team discovered an electrical problem. Explain what happened.", "The vendor…"),
 
   // Present simple vs continuous
-  S("pr1", "pres", "Entrevista", ["present_simple"], "Describe tu rol: qué haces normalmente como PM en tu empresa.", "As a PM, I…"),
-  S("pr2", "pres", "Daily", ["present_continuous"], "Di en qué está trabajando el equipo esta semana.", "This week the team…"),
-  S("pr3", "pres", "Status report", ["present_simple", "present_continuous"], "Explica que normalmente usan Jira, pero este mes están probando otra herramienta.", "We usually… but this month…"),
-  S("pr4", "pres", "Planning", ["present_simple"], "Explica cómo funciona la reunión semanal de seguimiento: cuándo es, cuánto dura y quién asiste.", "Our weekly meeting…"),
-  S("pr5", "pres", "Riesgos", ["present_continuous"], "Di que el proyecto va retrasado en este momento y que el equipo está recuperando tiempo.", "Right now…"),
-  S("pr6", "pres", "Stakeholders", ["present_simple"], "Explica qué hace el área de QA y a quién le reporta.", "The QA team…"),
+  S("pr1", "pres", "Interview", ["present_simple"], "Interview. Describe your role: your typical responsibilities as a PM at your company.", "As a PM, I…"),
+  S("pr2", "pres", "Daily", ["present_continuous"], "Stand-up. Explain the team's focus this week.", "This week the team…"),
+  S("pr3", "pres", "Status report", ["present_simple", "present_continuous"], "Status report. Your usual tool: Jira. This month: a trial of a different tool. Explain.", "We usually… but this month…"),
+  S("pr4", "pres", "Planning", ["present_simple"], "Planning. Explain how the weekly follow-up meeting works: day, length and attendees.", "Our weekly meeting…"),
+  S("pr5", "pres", "Risks", ["present_continuous"], "Risk review. Current status: behind schedule. Current action: the team is recovering time. Describe the situation at this moment.", "Right now…"),
+  S("pr6", "pres", "Stakeholders", ["present_simple"], "Stakeholder meeting. Explain the QA team's responsibilities and who they report to.", "The QA team…"),
 
   // Future
-  S("fu1", "future", "Stakeholders", ["future_will"], "En plena llamada el cliente pide un cambio urgente. Ofrece revisarlo tú mismo hoy.", "No problem,…"),
-  S("fu2", "future", "Planning", ["future_going_to"], "Explica el plan que ya decidieron para el próximo sprint.", "Next sprint, we…"),
-  S("fu3", "future", "Daily", ["future_present_continuous"], "Di que el jueves a las 10 tienes una reunión agendada con el proveedor.", "On Thursday…"),
-  S("fu4", "future", "Riesgos", ["future_going_to"], "Mirando el burndown, predice que no van a terminar a tiempo.", "Looking at the burndown,…"),
-  S("fu5", "future", "Stakeholders", ["future_will"], "Promete al sponsor que le enviarás el informe mañana antes de las 10.", "I promise…"),
-  S("fu6", "future", "Planning", ["future_present_continuous", "future_going_to"], "Cuenta que el lunes vuela a Monterrey (ya tiene boletos) y que allí va a presentar el roadmap.", "On Monday…"),
-  S("fu7", "future", "Daily", ["future_will"], "Alguien dice que el tablero no está actualizado. Decide en el momento actualizarlo tú.", "Oh, sorry,…"),
+  S("fu1", "future", "Stakeholders", ["future_will"], "Client call. The client asks for an urgent change. On the spot, you decide to review it yourself today. Respond.", "No problem,…"),
+  S("fu2", "future", "Planning", ["future_going_to"], "Sprint planning. The team already agreed on the plan for next sprint. Explain it.", "Next sprint, we…"),
+  S("fu3", "future", "Daily", ["future_present_continuous"], "Stand-up. Your calendar: meeting with the vendor, Thursday 10 am (already confirmed). Mention it.", "On Thursday…"),
+  S("fu4", "future", "Risks", ["future_going_to"], "Risk review. The burndown chart shows the team is far behind. Make a prediction about the deadline.", "Looking at the burndown,…"),
+  S("fu5", "future", "Stakeholders", ["future_will"], "The sponsor needs the report. Make a promise: report delivered tomorrow before 10 am.", "I promise…"),
+  S("fu6", "future", "Planning", ["future_present_continuous", "future_going_to"], "Travel plans. Flight to Monterrey on Monday (tickets booked). Your plan there: a roadmap presentation. Tell your team.", "On Monday…"),
+  S("fu7", "future", "Daily", ["future_will"], "Stand-up. Someone points out that the task board is out of date. Offer, right there, to update it.", "Oh, sorry,…"),
 
   // Past perfect
-  S("pp1", "past_perf", "Stakeholders", ["past_perfect", "past_simple"], "Explica que cuando llegaste a la reunión, el cliente ya había aprobado el presupuesto.", "When I arrived,…"),
-  S("pp2", "past_perf", "Retro", ["past_perfect", "past_simple"], "Cuenta que el proyecto ya se había retrasado antes de que tú asumieras el rol.", "The project…"),
-  S("pp3", "past_perf", "Entrevista", ["past_perfect"], "Di que nunca habías usado Scrum antes de este proyecto.", "Before this project,…"),
-  S("pp4", "past_perf", "Retro", ["past_perfect", "past_simple"], "Explica que el error ocurrió porque nadie había actualizado la documentación.", "The bug happened because…"),
-  S("pp5", "past_perf", "Riesgos", ["past_perfect", "past_simple"], "Cuenta que cuando el proveedor por fin respondió, ya habías encontrado otra alternativa.", "By the time the vendor…"),
+  S("pp1", "past_perf", "Stakeholders", ["past_perfect", "past_simple"], "Stakeholder update. Your arrival at the meeting: late. The client's budget approval: already done before you got there. Explain.", "When I arrived,…"),
+  S("pp2", "past_perf", "Retro", ["past_perfect", "past_simple"], "Retrospective. The project delays started before you took over as PM. Explain the timeline.", "The project…"),
+  S("pp3", "past_perf", "Interview", ["past_perfect"], "Interview. Your experience with Scrum before this project: zero. Tell them.", "Before this project,…"),
+  S("pp4", "past_perf", "Retro", ["past_perfect", "past_simple"], "Retrospective. Root cause of the bug: outdated documentation — no one updated it before the release. Explain.", "The bug happened because…"),
+  S("pp5", "past_perf", "Risks", ["past_perfect", "past_simple"], "Risk report. The vendor's reply finally arrived. By that time: alternative option already found by you. Explain.", "By the time the vendor…"),
 
   // Conditionals
-  S("co1", "cond", "Riesgos", ["conditional_first"], "Explica qué pasará si el proveedor no entrega a tiempo.", "If the vendor…"),
-  S("co2", "cond", "Planning", ["conditional_second"], "Di qué harías si tuvieras dos desarrolladores más.", "If I…"),
-  S("co3", "cond", "Stakeholders", ["conditional_first"], "Explica al sponsor qué pasará con la fecha si aprueban el cambio de alcance.", "If you approve…"),
-  S("co4", "cond", "Retro", ["conditional_second"], "Di qué harías diferente si fueras el sponsor del proyecto.", "If I were…"),
-  S("co5", "cond", "Riesgos", ["conditional_first"], "Explica qué harás si el cliente no responde antes del viernes.", "If the client…"),
-  S("co6", "cond", "Planning", ["conditional_second"], "Imagina que el presupuesto fuera el doble: di qué cambiarías en el plan.", "If the budget…"),
+  S("co1", "cond", "Risks", ["conditional_first"], "Risk review. Explain the consequences in case the vendor misses the delivery date.", "If the vendor…"),
+  S("co2", "cond", "Planning", ["conditional_second"], "Planning. Hypothetical situation: two extra developers on the team (you don't have them). Explain the difference they'd make.", "If I…"),
+  S("co3", "cond", "Stakeholders", ["conditional_first"], "Stakeholder meeting. Explain to the sponsor the effect on the deadline in case they approve the scope change.", "If you approve…"),
+  S("co4", "cond", "Retro", ["conditional_second"], "Retrospective. Imagine yourself in the sponsor's position (hypothetically). Say what you'd do differently.", "If I were…"),
+  S("co5", "cond", "Risks", ["conditional_first"], "Risk review. Possible scenario: no response from the client before Friday. Explain your plan for that case.", "If the client…"),
+  S("co6", "cond", "Planning", ["conditional_second"], "Planning. Hypothetical situation: a budget twice as big. Explain the changes to the plan.", "If the budget…"),
 ];
 
 export function scenariosFor(group: GroupId | "mix"): Scenario[] {

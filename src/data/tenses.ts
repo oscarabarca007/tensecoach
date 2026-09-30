@@ -61,7 +61,7 @@ export const TENSES: Record<TenseId, Tense> = {
     key: "Algo en curso ahora o en este periodo (esta semana, este sprint).",
     signals: ["right now", "this week", "currently", "at the moment"],
     example: "The team is testing the new release this week.",
-    timeline: [{ k: "wave", from: 48, to: 72, label: "en curso" }],
+    timeline: [{ k: "wave", from: 48, to: 72, label: "in progress" }],
   },
   past_simple: {
     id: "past_simple",
@@ -71,7 +71,7 @@ export const TENSES: Record<TenseId, Tense> = {
     key: "Acción terminada en un momento concreto del pasado (ayer, el lunes, en 2024).",
     signals: ["yesterday", "last week", "on Monday", "two days ago", "in 2024"],
     example: "The client approved the scope last Monday.",
-    timeline: [{ k: "dot", at: 30, label: "ayer" }],
+    timeline: [{ k: "dot", at: 30, label: "yesterday" }],
   },
   past_continuous: {
     id: "past_continuous",
@@ -96,7 +96,7 @@ export const TENSES: Record<TenseId, Tense> = {
     example: "We have completed three of the five deliverables so far.",
     timeline: [
       { k: "dots", from: 20, to: 52 },
-      { k: "arrow", from: 52, to: NOW, label: "resultado ahora" },
+      { k: "arrow", from: 52, to: NOW, label: "result now" },
     ],
   },
   present_perfect_continuous: {
@@ -132,9 +132,9 @@ export const TENSES: Record<TenseId, Tense> = {
     signals: ["I'll…", "I promise", "probably", "I think"],
     example: "Don't worry, I'll send you the report tomorrow morning.",
     timeline: [
-      { k: "x", at: NOW, label: "decido ahora" },
+      { k: "x", at: NOW, label: "decide now" },
       { k: "arrow", from: NOW, to: 86, dashed: true },
-      { k: "dot", at: 86, label: "mañana" },
+      { k: "dot", at: 86, label: "tomorrow" },
     ],
   },
   future_going_to: {
@@ -146,7 +146,7 @@ export const TENSES: Record<TenseId, Tense> = {
     signals: ["we've decided", "the plan is", "look at the data"],
     example: "We're going to split the backlog into two releases.",
     timeline: [
-      { k: "bar", from: 40, to: NOW, label: "plan / evidencia" },
+      { k: "bar", from: 40, to: NOW, label: "plan / evidence" },
       { k: "arrow", from: NOW, to: 86 },
       { k: "dot", at: 86 },
     ],
@@ -159,7 +159,7 @@ export const TENSES: Record<TenseId, Tense> = {
     key: "Citas y acuerdos ya agendados (reuniones, llamadas, viajes).",
     signals: ["on Thursday", "tomorrow at 10", "next week"],
     example: "I'm meeting the vendor on Thursday at 10.",
-    timeline: [{ k: "dot", at: 84, label: "agendado" }],
+    timeline: [{ k: "dot", at: 84, label: "scheduled" }],
   },
   conditional_first: {
     id: "conditional_first",
@@ -185,7 +185,7 @@ export const TENSES: Record<TenseId, Tense> = {
     example: "If we had two more developers, we would finish in May.",
     hypothetical: true,
     timeline: [
-      { k: "bar", from: 44, to: 92, dashed: true, label: "situación imaginaria" },
+      { k: "bar", from: 44, to: 92, dashed: true, label: "imaginary situation" },
     ],
   },
 };

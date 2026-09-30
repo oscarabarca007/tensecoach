@@ -25,14 +25,14 @@ export function Home({
       <header className="bar">
         <h1 className="brand">TenseCoach</h1>
         <nav className="row">
-          <button className="icon-btn" onClick={() => onNav("progress")} aria-label="Progreso">📊</button>
-          <button className="icon-btn" onClick={() => onNav("settings")} aria-label="Ajustes">⚙️</button>
+          <button className="icon-btn" onClick={() => onNav("progress")} aria-label="Progress">📊</button>
+          <button className="icon-btn" onClick={() => onNav("settings")} aria-label="Settings">⚙️</button>
         </nav>
       </header>
 
       {!settings.apiKey && (
         <button className="banner" onClick={() => onNav("settings")}>
-          Para empezar, agrega tu API key gratuita de Gemini → Ajustes
+          To get started, add your free Gemini API key → Settings
         </button>
       )}
 
@@ -43,26 +43,26 @@ export function Home({
             <span>{todayMin}<small>/{goal} min</small></span>
           </div>
           <div>
-            <h2>Hoy</h2>
-            <p className="muted">{pct >= 100 ? "¡Meta cumplida! 🎉" : `Te faltan ${Math.max(0, goal - todayMin)} min para tu meta`}</p>
-            <p className="muted small">🔥 Racha: {streak} {streak === 1 ? "día" : "días"}</p>
+            <h2>Today</h2>
+            <p className="muted">{pct >= 100 ? "Goal reached! 🎉" : `${Math.max(0, goal - todayMin)} min left to reach your goal`}</p>
+            <p className="muted small">🔥 Streak: {streak} {streak === 1 ? "day" : "days"}</p>
           </div>
           <button className="primary wide" onClick={() => onStart("mix")} disabled={!settings.apiKey}>
-            ▶ Práctica mixta
+            ▶ Mixed practice
           </button>
         </section>
 
         <button className="card group vocab-card" onClick={() => onNav("vocab")}>
           <div>
-            <strong>📚 Vocabulario</strong>
-            <span className="muted small">Aprende, pronuncia y usa palabras de gestión de proyectos</span>
+            <strong>📚 Vocabulary</strong>
+            <span className="muted small">Learn, pronounce and use project-management words</span>
           </div>
-          <span className={`acc ${vocabDue ? "mid" : ""}`}>{vocabDue ? `${vocabDue} hoy` : "al día"}</span>
+          <span className={`acc ${vocabDue ? "mid" : ""}`}>{vocabDue ? `${vocabDue} today` : "all done"}</span>
         </button>
         </div>
 
         <section className="groups">
-          <h2 className="section-title">Parejas en conflicto</h2>
+          <h2 className="section-title">Tricky tense pairs</h2>
           {GROUPS.map((g) => {
             const acc = groupAccuracy(stats, g.tenses);
             return (
@@ -72,7 +72,7 @@ export function Home({
                   <span className="muted small">{g.subtitle}</span>
                 </div>
                 <span className={`acc ${acc === null ? "" : acc >= 85 ? "good" : acc >= 60 ? "mid" : "bad"}`}>
-                  {acc === null ? "nuevo" : `${acc}%`}
+                  {acc === null ? "new" : `${acc}%`}
                 </span>
               </button>
             );

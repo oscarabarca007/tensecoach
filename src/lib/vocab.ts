@@ -177,8 +177,8 @@ export async function checkUsage(
   recall: boolean,
   tenseChallenge: string
 ): Promise<UsageResult> {
-  const task = `Target word: "${word.word}" (${word.pos}) = "${word.es}" in Spanish.
-${recall ? "This is a memory review: they were shown only the Spanish meaning and had to recall the English word." : `Example they saw: "${word.example}". They must NOT just repeat the example.`}
+  const task = `Target word: "${word.word}" (${word.pos}) = "${word.es}" in Spanish${word.def ? `; English definition: "${word.def}"` : ""}.
+${recall ? "This is a memory review: they were shown only the meaning (English definition and Spanish translation) and had to recall the English word." : `Example they saw: "${word.example}". They must NOT just repeat the example.`}
 They were also challenged to use the tense: ${tenseChallenge}. If they didn't use it, or used it wrongly, add a note (do not lower the score much for this).`;
   const r = await generateJson<UsageResult>(apiKey, model, USAGE_SYSTEM, [{ text: task }, ...answerParts("Their sentence", answer.audio, answer.text)], USAGE_SCHEMA);
   return { ...r, notes: Array.isArray(r.notes) ? r.notes : [], understood: r.understood !== false, score: clamp(r.score) };
@@ -187,7 +187,8 @@ They were also challenged to use the tense: ${tenseChallenge}. If they didn't us
 const GEN_SYSTEM = `You create vocabulary for a Spanish-speaking project manager (B1–B2) who wants to sound natural in English meetings.
 Return useful, high-frequency workplace words, phrasal verbs or collocations. Avoid rare jargon.
 - "say": approximate pronunciation for Spanish speakers using Spanish spelling, syllables separated by "-", the stressed syllable in CAPS (e.g. "DED-lain", "a-LAIN").
-- "es": short meaning in Spanish. "example": one natural sentence a PM would say in a meeting.
+- "es": short meaning in Spanish. "def": a simple English definition (learner's-dictionary style, B1 words, max ~15 words, don't use the word itself).
+- "example": one natural sentence a PM would say in a meeting.
 - "tip": the most common mistake a Spanish speaker makes with it (false friend, sound, preposition), in Spanish; empty string if none.
 - "cat": one of: ${WORD_CATS.join(", ")}.`;
 
@@ -202,12 +203,13 @@ const GEN_SCHEMA = {
           word: { type: "string" },
           pos: { type: "string" },
           es: { type: "string" },
+          def: { type: "string" },
           say: { type: "string" },
           example: { type: "string" },
           cat: { type: "string", enum: WORD_CATS },
           tip: { type: "string" },
         },
-        required: ["word", "pos", "es", "say", "example", "cat", "tip"],
+        required: ["word", "pos", "es", "def", "say", "example", "cat", "tip"],
       },
     },
   },

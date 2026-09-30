@@ -213,7 +213,7 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
               <div className="card scenario">
                 <p className="prompt">
                   {isReview && !hint
-                    ? `Di una oración con la palabra en inglés que significa «${w.es}».`
+                    ? "Di una oración con la palabra en inglés que corresponde a este significado."
                     : `Di una oración con «${w.word}».`}
                 </p>
                 <p className="muted">{CONTEXT[w.cat]}.</p>

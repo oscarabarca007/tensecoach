@@ -205,7 +205,7 @@ export interface AnalyzeInput {
 export async function analyze(input: AnalyzeInput): Promise<Analysis> {
   const task = input.repeatOf
     ? `The speaker is REPEATING this corrected sentence to practice it: "${input.repeatOf}". Evaluate whether their verb tenses now match it.`
-    : `Situation given to the speaker (in Spanish): "${input.situation}"
+    : `Situation given to the speaker: "${input.situation}"
 Tenses this exercise is designed to practice: ${input.targets.map((t) => TENSES[t].name).join(", ")} (other correct choices are acceptable).`;
 
   const parts: Part[] = [{ text: task }, ...answerParts("Their answer", input.audio, input.text)];

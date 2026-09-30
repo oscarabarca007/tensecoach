@@ -70,7 +70,7 @@ export function Timeline({ tense, compact = false }: { tense: TenseId; compact?:
   const t = TENSES[tense];
   return (
     <figure className={`timeline ${compact ? "timeline-compact" : ""}`}>
-      <svg viewBox={`0 0 ${W} 100`} role="img" aria-label={`Línea de tiempo: ${t.name}`}>
+      <svg viewBox={`0 0 ${W} 100`} role="img" aria-label={`Timeline: ${t.name}`}>
         <defs>
           <marker id="tl-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
             <path d="M0,0 L10,5 L0,10 z" className="tl-headfill" />
@@ -79,8 +79,8 @@ export function Timeline({ tense, compact = false }: { tense: TenseId; compact?:
         <line x1={X(0)} y1={AX} x2={X(100)} y2={AX} className="tl-axis" />
         <line x1={X(NOW)} y1={AX - 34} x2={X(NOW)} y2={AX + 8} className="tl-now" />
         <text x={X(NOW)} y={AX + 40} className="tl-now-label">NOW</text>
-        <text x={X(0)} y={AX + 40} className="tl-end" textAnchor="start">pasado</text>
-        <text x={X(100)} y={AX + 40} className="tl-end" textAnchor="end">futuro</text>
+        <text x={X(0)} y={AX + 40} className="tl-end" textAnchor="start">past</text>
+        <text x={X(100)} y={AX + 40} className="tl-end" textAnchor="end">future</text>
         {t.timeline.map((m, i) => <MarkEl key={i} m={m} />)}
       </svg>
       {!compact && (

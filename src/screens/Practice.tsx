@@ -43,7 +43,7 @@ export function Practice({
   const timer = useRef<number | undefined>(undefined);
 
   const sc = deck[idx];
-  const groupTitle = group === "mix" ? "Mezcla" : GROUPS.find((g) => g.id === group)?.title;
+  const groupTitle = group === "mix" ? "Mixed practice" : GROUPS.find((g) => g.id === group)?.title;
   const done = idx >= deck.length;
 
   usePracticeClock();
@@ -62,7 +62,7 @@ export function Practice({
     try {
       await r.start();
     } catch {
-      setError("No pude acceder al micrófono. Da permiso de micrófono a la app o usa «Escribir».");
+      setError("I can't access the microphone. Allow microphone access for the app, or use «Type instead».");
       return;
     }
     rec.current = r;
@@ -90,7 +90,7 @@ export function Practice({
       return;
     }
     if (audio.seconds < 0.8) {
-      setError("La grabación fue muy corta. Mantén el micrófono activo mientras hablas.");
+      setError("That recording was too short. Tap, speak, then tap again to finish.");
       setPhase(result ? "feedback" : "ready");
       return;
     }
@@ -115,7 +115,7 @@ export function Practice({
   }
 
   function fail(e: unknown) {
-    setError(e instanceof GeminiError ? e.message : `Algo falló: ${(e as Error)?.message ?? e}`);
+    setError(e instanceof GeminiError ? e.message : `Something went wrong: ${(e as Error)?.message ?? e}`);
     setPhase(result ? "feedback" : "ready");
   }
 
@@ -130,7 +130,7 @@ export function Practice({
       ...input,
     });
     if (!a.understood) {
-      setError("No te entendí bien. Intenta de nuevo, hablando cerca del micrófono.");
+      setError("I couldn't understand you. Please try again, closer to the microphone.");
       setPhase(result ? "feedback" : "ready");
       return;
     }
@@ -184,13 +184,13 @@ export function Practice({
     return (
       <div className="screen">
         <header className="bar">
-          <button className="link" onClick={onExit}>← Inicio</button>
+          <button className="link" onClick={onExit}>← Home</button>
         </header>
         <div className="card center">
-          <h2>¡Sesión completa!</h2>
+          <h2>Session complete!</h2>
           <p className="big-num">{avg}</p>
-          <p className="muted">Precisión promedio en {scores.length} ejercicios de {groupTitle}</p>
-          <button className="primary" onClick={onExit}>Volver al inicio</button>
+          <p className="muted">Average accuracy in {scores.length} exercises · {groupTitle}</p>
+          <button className="primary" onClick={onExit}>Back to home</button>
         </div>
       </div>
     );
@@ -204,7 +204,7 @@ export function Practice({
   return (
     <div className="screen practice">
       <header className="bar">
-        <button className="link" onClick={onExit}>← Salir</button>
+        <button className="link" onClick={onExit}>← Exit</button>
         <span className="muted small">{groupTitle} · {idx + 1}/{deck.length}</span>
       </header>
       <div className="progress-line"><span style={{ width: `${(idx / deck.length) * 100}%` }} /></div>
@@ -216,15 +216,15 @@ export function Practice({
             <p className="prompt">{sc.prompt}</p>
             {repeatTarget && (
               <p className="repeat-target">
-                Repite: <strong>{repeatTarget}</strong>
+                Say it again: <strong>{repeatTarget}</strong>
               </p>
             )}
             {!hint ? (
-              <button className="link small" onClick={() => setHint(true)}>💡 Ver pista</button>
+              <button className="link small" onClick={() => setHint(true)}>💡 Show hint</button>
             ) : (
               <div className="hint">
-                {sc.starter && <p>Empieza con: <em>{sc.starter}</em></p>}
-                <p>Tiempos: {sc.targets.map((t) => TENSES[t].name).join(" + ")}</p>
+                {sc.starter && <p>Start with: <em>{sc.starter}</em></p>}
+                <p>Tenses: {sc.targets.map((t) => TENSES[t].name).join(" + ")}</p>
                 <div className="only-narrow"><Timeline tense={main} compact /></div>
               </div>
             )}
@@ -234,25 +234,25 @@ export function Practice({
             <div className="error" role="alert">
               <p>{error}</p>
               {retryInput && phase !== "analyzing" && (
-                <button className="ghost" onClick={() => void run(retryInput)}>↻ Reintentar</button>
+                <button className="ghost" onClick={() => void run(retryInput)}>↻ Try again</button>
               )}
             </div>
           )}
 
           {phase === "analyzing" ? (
-            <Analyzing label="Analizando tus tiempos verbales…" />
+            <Analyzing label="Checking your verb tenses…" slowNote="Gemini is very busy; retrying automatically…" />
           ) : typing && !recordingNow ? (
             <div className="type-box">
               <textarea
                 value={typed}
                 onChange={(e) => setTyped(e.target.value)}
-                placeholder="Escribe tu respuesta en inglés…"
+                placeholder="Type your answer in English…"
                 rows={3}
                 autoFocus
               />
               <div className="row">
-                <button className="ghost" onClick={() => setTyping(false)}>🎙️ Hablar</button>
-                <button className="primary" onClick={submitTyped} disabled={!typed.trim()}>Revisar</button>
+                <button className="ghost" onClick={() => setTyping(false)}>🎙️ Speak</button>
+                <button className="primary" onClick={submitTyped} disabled={!typed.trim()}>Check</button>
               </div>
             </div>
           ) : (
@@ -260,26 +260,26 @@ export function Practice({
               <button
                 className={`mic ${recordingNow ? "mic-on" : ""}`}
                 onClick={recordingNow ? stopRecording : phase === "feedback" ? repeat : startRecording}
-                aria-label={recordingNow ? "Detener y revisar" : "Grabar respuesta"}
+                aria-label={recordingNow ? "Stop and check" : "Record your answer"}
               >
                 {recordingNow ? "■" : "🎙️"}
               </button>
               <p className="muted small">
                 {recordingNow
-                  ? `Grabando… ${elapsed}s · toca para terminar`
+                  ? `Recording… ${elapsed}s · tap to finish`
                   : phase === "feedback"
-                  ? "Toca para repetir la versión corregida en voz alta"
-                  : "Toca y responde en inglés"}
+                  ? "Tap and say the corrected version out loud"
+                  : "Tap and answer out loud"}
               </p>
               {!recordingNow && phase !== "feedback" && (
-                <button className="link small" onClick={() => setTyping(true)}>⌨️ Prefiero escribir</button>
+                <button className="link small" onClick={() => setTyping(true)}>⌨️ Type instead</button>
               )}
             </div>
           )}
 
           {phase === "feedback" && (
             <div className="row">
-              <button className="primary wide" onClick={next}>Siguiente →</button>
+              <button className="primary wide" onClick={next}>Next →</button>
             </div>
           )}
         </div>
@@ -293,7 +293,7 @@ export function Practice({
               {result || hint ? (
                 <Timeline tense={main} />
               ) : (
-                <p className="muted placeholder">Aquí verás tus correcciones y la línea de tiempo del tiempo verbal.</p>
+                <p className="muted placeholder">Your corrections and the tense timeline will appear here.</p>
               )}
             </div>
           )}

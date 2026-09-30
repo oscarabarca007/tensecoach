@@ -32,7 +32,7 @@ export function VocabHome({
 
   const q = query.trim().toLowerCase();
   const shown = words.filter(
-    (w) => (cat === "all" || w.cat === cat) && (!q || w.word.toLowerCase().includes(q) || w.es.toLowerCase().includes(q))
+    (w) => (cat === "all" || w.cat === cat) && (!q || [w.word, w.es, w.def ?? ""].some((s) => s.toLowerCase().includes(q)))
   );
 
   async function generate() {
@@ -113,6 +113,12 @@ export function VocabHome({
                       <strong>{w.word}</strong> <span className="muted small">{w.say}</span>
                       <br />
                       <span className="muted small">{w.es}</span>
+                      {w.def && (
+                        <>
+                          <br />
+                          <span className="muted small def-line">{w.def}</span>
+                        </>
+                      )}
                     </span>
                     <span className={`status-chip st-${st}`}>{STATUS_LABEL[st]}</span>
                   </button>

@@ -249,7 +249,15 @@ mark { border-radius: 6px; padding: 0 3px; }
 .word-hidden { font-size: 2rem; font-weight: 700; color: var(--muted); }
 .say-hint { font-size: 1rem; }
 .say-hint strong { color: var(--accent); letter-spacing: 0.03em; }
-.meaning { font-size: 1.1rem; font-weight: 500; }
+.meanings { display: flex; flex-direction: column; gap: 6px; }
+.meaning, .def { display: flex; gap: 8px; align-items: baseline; }
+.meaning { font-size: 1.05rem; font-weight: 500; }
+.def { font-size: 1.05rem; }
+.lang {
+  flex: none; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.05em;
+  padding: 1px 6px; border-radius: 6px; background: var(--surface-2); color: var(--muted);
+  position: relative; top: -1px;
+}
 .example { font-weight: 400; background: var(--surface-2); border-radius: 12px; padding: 8px 8px 8px 12px; }
 .example strong { color: var(--accent); }
 .challenge { background: var(--accent-soft); border-radius: 10px; padding: 8px 10px; font-size: 0.95rem; }
@@ -270,6 +278,7 @@ mark { border-radius: 6px; padding: 0 3px; }
 .word-list li:first-child { border-top: 0; }
 .word-row { flex: 1; min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; text-align: left; padding: 8px 4px; border-radius: 10px; }
 .word-row:hover { background: var(--surface-2); }
+.def-line { font-style: italic; }
 .status-chip { font-size: 0.75rem; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
 .st-new { background: var(--surface-2); color: var(--muted); }
 .st-learning { background: var(--mid-soft); color: var(--mid); }

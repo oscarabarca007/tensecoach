@@ -39,7 +39,18 @@ export function WordCard({ word, rate, hideWord = false }: { word: Word; rate: n
           </p>
         </>
       )}
-      <p className="meaning">{word.es}</p>
+      <div className="meanings">
+        {word.def && (
+          <p className="def">
+            <span className="lang">EN</span>
+            <span>{word.def}</span>
+          </p>
+        )}
+        <p className="meaning">
+          <span className="lang">ES</span>
+          <span>{word.es}</span>
+        </p>
+      </div>
       {!hideWord && (
         <p className="say example">
           <span>{withWord(word.example, word.word)}</span>
