@@ -1,5 +1,6 @@
 import type { Word } from "../data/words";
 import { speak } from "../lib/tts";
+import { Icon } from "./Icon";
 
 /** Highlights the target word (any inflection that starts with it) inside the example. */
 function withWord(example: string, word: string) {
@@ -16,48 +17,53 @@ function withWord(example: string, word: string) {
   );
 }
 
-export function WordCard({ word, rate, hideWord = false }: { word: Word; rate: number; hideWord?: boolean }) {
+/** The word and its English definition lead; the Spanish translation is secondary support. */
+export function WordCard({ word, rate }: { word: Word; rate: number }) {
   return (
-    <div className="card word-card">
+    <article className="card">
       <div className="row between">
-        <span className="chip">{word.cat}</span>
-        <span className="muted small">{word.pos}</span>
+        <span className="chip static">{word.cat}</span>
+        <span className="label-m on-variant">{word.pos}</span>
       </div>
-      {hideWord ? (
-        <p className="word-hidden">¿?</p>
-      ) : (
-        <>
-          <div className="word-main">
-            <h2 className="word">{word.word}</h2>
-            <div className="row">
-              <button className="icon-btn" onClick={() => speak(word.word, rate)} aria-label="Escuchar">🔊</button>
-              <button className="icon-btn" onClick={() => speak(word.word, 0.55)} aria-label="Escuchar despacio">🐢</button>
-            </div>
+
+      <div className="stack" style={{ gap: 4 }}>
+        <div className="word-head">
+          <h2 className="word">{word.word}</h2>
+          <div className="row" style={{ gap: 0, flexWrap: "nowrap" }}>
+            <button className="icon-btn tonal" onClick={() => speak(word.word, rate)} aria-label="Listen">
+              <Icon name="volume_up" />
+            </button>
+            <button className="icon-btn tonal" onClick={() => speak(word.word, 0.55)} aria-label="Listen slowly">
+              <Icon name="slow_motion_video" />
+            </button>
           </div>
-          <p className="say-hint">
-            Suena: <strong>{word.say}</strong> <span className="muted small">(MAYÚSCULAS = sílaba fuerte)</span>
-          </p>
-        </>
-      )}
-      <div className="meanings">
-        {word.def && (
-          <p className="def">
-            <span className="lang">EN</span>
-            <span>{word.def}</span>
-          </p>
-        )}
-        <p className="meaning">
-          <span className="lang">ES</span>
-          <span>{word.es}</span>
+        </div>
+        <p className="pron body-m">
+          <Icon name="record_voice_over" size={18} />
+          <strong>{word.say}</strong>
+          <span className="body-s">(MAYÚSCULAS = sílaba fuerte)</span>
         </p>
       </div>
-      {!hideWord && (
-        <p className="say example">
-          <span>{withWord(word.example, word.word)}</span>
-          <button className="icon-btn" onClick={() => speak(word.example, rate)} aria-label="Escuchar ejemplo">🔊</button>
-        </p>
+
+      {word.def && <p className="definition">{word.def}</p>}
+      <p className="translation body-m">
+        <Icon name="translate" />
+        {word.es}
+      </p>
+
+      <div className="inset say example">
+        <span className="body-l">{withWord(word.example, word.word)}</span>
+        <button className="icon-btn primary" onClick={() => speak(word.example, rate)} aria-label="Listen to the example">
+          <Icon name="volume_up" />
+        </button>
+      </div>
+
+      {word.tip && (
+        <div className="banner warn">
+          <Icon name="lightbulb" />
+          <span className="body-m">{word.tip}</span>
+        </div>
       )}
-      {!hideWord && word.tip && <p className="note">💡 {word.tip}</p>}
-    </div>
+    </article>
   );
 }

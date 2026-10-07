@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import type { WordCat } from "../data/words";
 import { TENSES, type TenseId } from "../data/tenses";
 import { Analyzing } from "../components/Analyzing";
+import { Correction, SayLine, ScoreBadge } from "../components/Feedback";
+import { Icon } from "../components/Icon";
+import { ErrorBanner, FlowHeader, MicFab } from "../components/ui";
 import { WordCard } from "../components/WordCard";
-import { ScoreBadge } from "../components/Feedback";
 import { GeminiError } from "../lib/gemini";
 import { usePracticeClock, useRecorder } from "../lib/hooks";
 import type { Recording } from "../lib/recorder";
@@ -44,7 +46,6 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
   const [usage, setUsage] = useState<UsageResult | null>(null);
   const [typing, setTyping] = useState(false);
   const [typed, setTyped] = useState("");
-  const [hint, setHint] = useState(false);
   const [results, setResults] = useState<{ word: string; passed: boolean }[]>([]);
   const [counted, setCounted] = useState(false);
   const [retry, setRetry] = useState<(() => void) | null>(null);
@@ -84,7 +85,7 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
     setError("");
     setRetry(null);
     try {
-      const r = await checkUsage(settings.apiKey, settings.model, item.word, answer, isReview, TENSES[challenge].name);
+      const r = await checkUsage(settings.apiKey, settings.model, item.word, answer, false, TENSES[challenge].name);
       if (!r.understood) {
         setError("No te entendí bien. Intenta de nuevo, cerca del micrófono.");
         return;
@@ -116,7 +117,6 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
     setUsage(null);
     setError("");
     setRetry(null);
-    setHint(false);
     setTyping(false);
     setCounted(false);
   }
@@ -124,18 +124,26 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
   if (!item || step === "done") {
     const ok = results.filter((r) => r.passed).length;
     return (
-      <div className="screen">
-        <header className="bar"><button className="link" onClick={onExit}>← Vocabulario</button></header>
-        <div className="card center">
-          <h2>¡Sesión de vocabulario completa!</h2>
+      <main className="page flow">
+        <header className="topbar">
+          <button className="icon-btn" onClick={onExit} aria-label="Cerrar"><Icon name="close" /></button>
+          <h1 className="title-l" style={{ fontSize: 18 }}>Vocabulario</h1>
+        </header>
+        <section className="card" style={{ alignItems: "center", textAlign: "center", padding: "32px 24px" }}>
+          <span className="avatar" style={{ width: 64, height: 64 }}><Icon name="school" size={32} /></span>
+          <h2 className="headline-s">¡Sesión completa!</h2>
           <p className="big-num">{ok}/{results.length}</p>
-          <p className="muted">palabras usadas correctamente</p>
-          <ul className="result-list">
-            {results.map((r, i) => <li key={i}>{r.passed ? "✅" : "🔁"} {r.word}</li>)}
-          </ul>
-          <button className="primary" onClick={onExit}>Listo</button>
-        </div>
-      </div>
+          <p className="body-m on-variant">palabras usadas correctamente</p>
+          <div className="chips" style={{ justifyContent: "center" }}>
+            {results.map((r, i) => (
+              <span key={i} className={`badge ${r.passed ? "good" : "mid"}`}>
+                <Icon name={r.passed ? "check" : "refresh"} /> {r.word}
+              </span>
+            ))}
+          </div>
+          <button className="btn btn-filled btn-lg" onClick={onExit}>Listo</button>
+        </section>
+      </main>
     );
   }
 
@@ -144,99 +152,115 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
     busy ? (
       <Analyzing label="Escuchando con atención…" />
     ) : (
-      <div className="mic-area">
-        <button
-          className={`mic ${mic.recording ? "mic-on" : ""}`}
-          onClick={mic.recording ? mic.stop : mic.start}
-          aria-label={mic.recording ? "Detener y revisar" : "Grabar"}
-        >
-          {mic.recording ? "■" : "🎙️"}
-        </button>
-        <p className="muted small">{mic.recording ? `Grabando… ${mic.elapsed}s · toca para terminar` : label}</p>
-      </div>
+      <MicFab
+        recording={mic.recording}
+        elapsed={mic.elapsed}
+        onClick={mic.recording ? mic.stop : mic.start}
+        idleLabel={label}
+        recordingLabel={(s) => `Grabando… ${s}s · toca para terminar`}
+        startAria="Grabar"
+        stopAria="Detener y revisar"
+      />
     );
 
-  return (
-    <div className="screen practice">
-      <header className="bar">
-        <button className="link" onClick={onExit}>← Salir</button>
-        <span className="muted small">{isReview ? "Repaso" : "Palabra nueva"} · {idx + 1}/{queue.length}</span>
-      </header>
-      <div className="progress-line"><span style={{ width: `${(idx / queue.length) * 100}%` }} /></div>
-      <div className="steps">
-        {!isReview && <span className={step === "learn" ? "on" : "done"}>1 Escucha</span>}
-        {!isReview && <span className={step === "pronounce" ? "on" : step === "use" ? "done" : ""}>2 Pronuncia</span>}
-        <span className={step === "use" ? "on" : ""}>{isReview ? "Recuerda y úsala" : "3 Úsala"}</span>
-      </div>
+  const steps: { id: Step; label: string }[] = isReview
+    ? [{ id: "use", label: "Úsala" }]
+    : [
+        { id: "learn", label: "Escucha" },
+        { id: "pronounce", label: "Pronuncia" },
+        { id: "use", label: "Úsala" },
+      ];
+  const stepIdx = steps.findIndex((s) => s.id === step);
 
-      <div className="split">
-        <div className="pane">
-          <WordCard word={w} rate={settings.voiceRate} hideWord={isReview && !usage && !hint} />
-          {isReview && !usage && !hint && (
-            <button className="link small" onClick={() => setHint(true)}>💡 Mostrar la palabra</button>
-          )}
-          {error && (
-            <div className="error" role="alert">
-              <p>{error}</p>
-              {retry && !busy && !mic.recording && (
-                <button className="ghost" onClick={retry}>↻ Reintentar</button>
-              )}
-            </div>
-          )}
+  return (
+    <main className="page flow">
+      <FlowHeader
+        title={isReview ? "Repaso" : "Palabra nueva"}
+        index={idx}
+        total={queue.length}
+        onClose={onExit}
+        closeLabel="Cerrar sesión de vocabulario"
+      />
+
+      {steps.length > 1 && (
+        <div className="stepper" role="list">
+          {steps.map((s, i) => (
+            <span key={s.id} role="listitem" className={`step ${i === stepIdx ? "on" : i < stepIdx ? "done" : ""}`}>
+              {i < stepIdx && <Icon name="check" />}
+              {s.label}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="grid-2">
+        <div className="stack" style={{ gap: 16 }}>
+          <WordCard word={w} rate={settings.voiceRate} />
+
+          {error && <ErrorBanner message={error} retryLabel="Reintentar" onRetry={retry && !busy && !mic.recording ? retry : undefined} />}
 
           {step === "learn" && (
-            <div className="card">
-              <p>Escúchala 2-3 veces (usa 🐢 para oírla despacio) y repítela en voz baja fijándote en la sílaba fuerte.</p>
+            <section className="card high">
+              <p className="body-m">
+                Lee la definición, escucha la palabra 2-3 veces (usa <Icon name="slow_motion_video" size={18} /> para oírla despacio) y repítela fijándote en la sílaba fuerte.
+              </p>
               <button
-                className="primary wide"
+                className="btn btn-filled btn-lg btn-block trailing-icon"
                 onClick={() => {
                   setStep("pronounce");
                   speak(w.word, settings.voiceRate);
                 }}
               >
-                Estoy listo para pronunciarla →
+                Estoy listo para pronunciarla <Icon name="arrow_forward" />
               </button>
-            </div>
+            </section>
           )}
 
           {step === "pronounce" && (
             <>
               {micBlock(pron ? "Toca para intentarlo otra vez" : `Toca y di «${w.word}»`)}
               {pron && (
-                <button className="primary wide" onClick={() => setStep("use")}>Ahora úsala en una oración →</button>
+                <button className="btn btn-filled btn-lg btn-block trailing-icon" onClick={() => setStep("use")}>
+                  Ahora úsala en una oración <Icon name="arrow_forward" />
+                </button>
               )}
             </>
           )}
 
           {step === "use" && (
             <>
-              <div className="card scenario">
-                <p className="prompt">
-                  {isReview && !hint
-                    ? "Di una oración con la palabra en inglés que corresponde a este significado."
-                    : `Di una oración con «${w.word}».`}
-                </p>
-                <p className="muted">{CONTEXT[w.cat]}.</p>
-                <p className="challenge">🎯 Reto: úsala en <strong>{TENSES[challenge].es}</strong></p>
-              </div>
+              <section className="card high">
+                <p className="title-m">Di una oración con «{w.word}».</p>
+                <p className="body-m on-variant">{CONTEXT[w.cat]}.</p>
+                <div className="banner" style={{ padding: "10px 14px" }}>
+                  <Icon name="tune" />
+                  <span className="body-m">Reto: úsala en <strong>{TENSES[challenge].es}</strong></span>
+                </div>
+              </section>
               {usage ? (
                 <div className="row">
-                  <button className="ghost" onClick={() => setUsage(null)}>Intentar otra oración</button>
-                  <button className="primary grow" onClick={next}>Siguiente →</button>
+                  <button className="btn btn-outlined" onClick={() => setUsage(null)}><Icon name="refresh" /> Otra oración</button>
+                  <button className="btn btn-filled grow trailing-icon" onClick={next}>Siguiente <Icon name="arrow_forward" /></button>
                 </div>
               ) : typing && !busy ? (
-                <div className="type-box">
-                  <textarea value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Escribe tu oración en inglés…" rows={3} autoFocus />
-                  <div className="row">
-                    <button className="ghost" onClick={() => setTyping(false)}>🎙️ Hablar</button>
-                    <button className="primary" disabled={!typed.trim()} onClick={() => onUse({ text: typed.trim() })}>Revisar</button>
+                <div className="stack">
+                  <label className="textfield">
+                    <textarea value={typed} onChange={(e) => setTyped(e.target.value)} placeholder="Escribe tu oración en inglés…" rows={3} autoFocus aria-label="Tu oración" />
+                  </label>
+                  <div className="row end">
+                    <button className="btn btn-text" onClick={() => setTyping(false)}><Icon name="mic" /> Hablar</button>
+                    <button className="btn btn-filled" disabled={!typed.trim()} onClick={() => onUse({ text: typed.trim() })}>
+                      <Icon name="check" /> Revisar
+                    </button>
                   </div>
                 </div>
               ) : (
                 <>
                   {micBlock("Toca y di tu oración")}
                   {!mic.recording && !busy && (
-                    <button className="link small center-self" onClick={() => setTyping(true)}>⌨️ Prefiero escribir</button>
+                    <button className="btn btn-text" style={{ alignSelf: "center" }} onClick={() => setTyping(true)}>
+                      <Icon name="keyboard" /> Prefiero escribir
+                    </button>
                   )}
                 </>
               )}
@@ -244,81 +268,80 @@ export function VocabSession({ queue, settings, onExit }: { queue: VocabQueueIte
           )}
         </div>
 
-        <div className="pane side">
+        <div className="stack sticky" style={{ gap: 16 }}>
           {step === "pronounce" && pron && <PronFeedback r={pron} target={w.word} rate={settings.voiceRate} />}
           {step === "use" && usage && <UsageFeedback r={usage} rate={settings.voiceRate} />}
           {step === "use" && !usage && pron && <PronFeedback r={pron} target={w.word} rate={settings.voiceRate} />}
           {!pron && !usage && (
-            <p className="muted placeholder only-wide">Aquí verás cómo te escuchó la IA y las correcciones.</p>
+            <div className="placeholder only-wide">
+              <Icon name="graphic_eq" />
+              <span className="body-m">Aquí verás cómo te escuchó la IA y las correcciones.</span>
+            </div>
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
 
 function PronFeedback({ r, target, rate }: { r: PronunciationResult; target: string; rate: number }) {
   return (
-    <div className="feedback">
+    <section className="card">
       <div className="fb-head">
         <ScoreBadge score={r.score} />
-        <div>
-          <h3>Pronunciación</h3>
-          <p>{r.ok ? "✅ Se entiende bien" : "🔁 Todavía no suena claro"}{!r.stressOk && " · revisa la sílaba fuerte"}</p>
+        <div className="stack" style={{ gap: 2 }}>
+          <span className="overline" style={{ margin: 0 }}>Pronunciación</span>
+          <span className="title-m">{r.ok ? "Se entiende bien" : "Todavía no suena claro"}</span>
+          {!r.stressOk && <span className="badge mid" style={{ alignSelf: "flex-start" }}>Revisa la sílaba fuerte</span>}
         </div>
       </div>
-      <p>Te escuché decir: <strong>«{r.heard}»</strong></p>
-      <p>{r.tips}</p>
+      <p className="body-l">Te escuché decir: <strong>«{r.heard}»</strong></p>
+      <p className="body-m on-variant">{r.tips}</p>
       <div className="row">
-        <button className="ghost" onClick={() => speak(target, rate)}>🔊 Modelo</button>
-        <button className="ghost" onClick={() => speak(target, 0.55)}>🐢 Despacio</button>
+        <button className="btn btn-tonal" onClick={() => speak(target, rate)}><Icon name="volume_up" /> Modelo</button>
+        <button className="btn btn-tonal" onClick={() => speak(target, 0.55)}><Icon name="slow_motion_video" /> Despacio</button>
       </div>
-    </div>
+    </section>
   );
 }
 
 function UsageFeedback({ r, rate }: { r: UsageResult; rate: number }) {
+  const check = (ok: boolean, yes: string, no: string) => (
+    <span className={`badge ${ok ? "good" : "bad"}`}>
+      <Icon name={ok ? "check" : "close"} /> {ok ? yes : no}
+    </span>
+  );
   return (
-    <div className="feedback">
+    <section className="card">
       <div className="fb-head">
         <ScoreBadge score={r.score} />
-        <p className="fb-summary">{r.feedback}</p>
+        <p className="body-l">{r.feedback}</p>
       </div>
       <section>
-        <h3>Lo que dijiste</h3>
+        <p className="overline">Lo que dijiste</p>
         <p className="transcript">{r.transcript}</p>
       </section>
-      <div className="checks">
-        <span className={`chip ${r.usedWord ? "chip-ok" : "chip-bad"}`}>{r.usedWord ? "✓ Usaste la palabra" : "✗ No usaste la palabra"}</span>
-        <span className={`chip ${r.meaningOk ? "chip-ok" : "chip-bad"}`}>{r.meaningOk ? "✓ Significado correcto" : "✗ Revisa el significado"}</span>
-        {r.pronunciationTip && <span className={`chip ${r.pronunciationOk ? "chip-ok" : "chip-bad"}`}>{r.pronunciationOk ? "✓ Pronunciación" : "✗ Pronunciación"}</span>}
+      <div className="chips">
+        {check(r.usedWord, "Usaste la palabra", "No usaste la palabra")}
+        {check(r.meaningOk, "Significado correcto", "Revisa el significado")}
+        {r.pronunciationTip && check(r.pronunciationOk, "Pronunciación", "Pronunciación")}
       </div>
-      {r.pronunciationTip && <p className="err-why">🗣️ {r.pronunciationTip}</p>}
+      {r.pronunciationTip && (
+        <div className="inset row" style={{ flexWrap: "nowrap", alignItems: "flex-start" }}>
+          <Icon name="record_voice_over" size={20} className="on-variant" />
+          <span className="body-m">{r.pronunciationTip}</span>
+        </div>
+      )}
       {r.notes.length > 0 && (
         <section>
-          <h3>Correcciones</h3>
-          <ul className="errors">
-            {r.notes.map((n, i) => (
-              <li key={i}>
-                <div className="err-line"><s>{n.wrong}</s> <span aria-hidden>→</span> <strong>{n.right}</strong></div>
-                {n.why && <p className="err-why">{n.why}</p>}
-              </li>
-            ))}
+          <p className="overline">Correcciones</p>
+          <ul className="corrections">
+            {r.notes.map((n, i) => <Correction key={i} wrong={n.wrong} right={n.right} why={n.why} />)}
           </ul>
         </section>
       )}
-      {r.notes.length > 0 && r.corrected && (
-        <section>
-          <h3>Versión corregida</h3>
-          <p className="say">{r.corrected}<button className="icon-btn" onClick={() => speak(r.corrected, rate)} aria-label="Escuchar">🔊</button></p>
-        </section>
-      )}
-      {r.natural && r.natural.trim() !== r.corrected.trim() && (
-        <section>
-          <h3>Como lo diría un PM nativo</h3>
-          <p className="say">{r.natural}<button className="icon-btn" onClick={() => speak(r.natural, rate)} aria-label="Escuchar">🔊</button></p>
-        </section>
-      )}
-    </div>
+      {r.notes.length > 0 && r.corrected && <SayLine label="Versión corregida" text={r.corrected} rate={rate} />}
+      {r.natural && r.natural.trim() !== r.corrected.trim() && <SayLine label="Como lo diría un PM nativo" text={r.natural} rate={rate} />}
+    </section>
   );
 }

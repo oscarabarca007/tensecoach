@@ -69,7 +69,7 @@ function MarkEl({ m }: { m: Mark }) {
 export function Timeline({ tense, compact = false }: { tense: TenseId; compact?: boolean }) {
   const t = TENSES[tense];
   return (
-    <figure className={`timeline ${compact ? "timeline-compact" : ""}`}>
+    <figure className={compact ? "timeline" : "timeline card"} style={compact ? undefined : { gap: 4 }}>
       <svg viewBox={`0 0 ${W} 100`} role="img" aria-label={`Timeline: ${t.name}`}>
         <defs>
           <marker id="tl-head" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
@@ -85,9 +85,9 @@ export function Timeline({ tense, compact = false }: { tense: TenseId; compact?:
       </svg>
       {!compact && (
         <figcaption>
-          <strong>{t.name}</strong> <span className="muted">· {t.formula}</span>
-          <br />
-          {t.key}
+          <span className="title-m">{t.name}</span>
+          <span className="label-l primary-text">{t.formula}</span>
+          <span className="body-m on-variant">{t.key}</span>
         </figcaption>
       )}
     </figure>

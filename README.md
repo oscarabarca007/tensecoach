@@ -18,8 +18,13 @@ para hispanohablantes (MAYÚSCULAS = sílaba fuerte) y el error típico de cada 
 2. **Pronuncia**: Gemini escucha tu audio y te dice qué oyó y qué sonido corregir.
 3. **Úsala**: di una oración con la palabra; además tiene un reto de tiempo verbal.
 Las palabras siguen repetición espaciada (cajas de Leitner): si fallas vuelve mañana,
-si aciertas se repasa a los 1, 3, 7, 14 y 30 días. En los repasos solo ves el significado
-en español y tienes que recordar la palabra en inglés.
+si aciertas se repasa a los 1, 3, 7, 14 y 30 días. La palabra y su definición en inglés
+siempre están a la vista; el objetivo es asociarlas y usarlas al hablar.
+
+## Diseño
+Material Design 3 con la paleta de Google (claro/oscuro según el sistema), tipografía Google Sans
+e íconos Material Symbols (solo los usados, ver `index.html` y `src/components/Icon.tsx`).
+Barra de navegación inferior con el Fold cerrado y riel lateral al abrirlo.
 
 ## Desarrollo
 ```bash

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { tenseLabel } from "../data/tenses";
+import { Icon } from "./Icon";
 import type { Analysis } from "../lib/gemini";
 import { speak } from "../lib/tts";
 
@@ -32,62 +33,72 @@ function highlight(a: Analysis): ReactNode[] {
 
 export function ScoreBadge({ score }: { score: number }) {
   const tone = score >= 85 ? "good" : score >= 60 ? "mid" : "bad";
-  return <span className={`score score-${tone}`}>{score}</span>;
+  return <span className={`score score-${tone}`} aria-label={`Score ${score}`}>{score}</span>;
+}
+
+/** A sentence with a listen button, used for corrected / natural versions. */
+export function SayLine({ label, text, rate }: { label: string; text: string; rate: number }) {
+  return (
+    <section>
+      <p className="overline">{label}</p>
+      <div className="say">
+        <span className="body-l">{text}</span>
+        <button className="icon-btn primary" onClick={() => speak(text, rate)} aria-label={`Listen: ${label}`}>
+          <Icon name="volume_up" />
+        </button>
+      </div>
+    </section>
+  );
+}
+
+export function Correction({ wrong, right, why, children }: { wrong: string; right: string; why?: string; children?: ReactNode }) {
+  return (
+    <li className="correction">
+      <div className="corr-line">
+        <s>{wrong}</s>
+        <Icon name="arrow_forward" />
+        <strong>{right}</strong>
+      </div>
+      {children}
+      {why && <p className="body-m on-variant">{why}</p>}
+    </li>
+  );
 }
 
 export function Feedback({ a, rate }: { a: Analysis; rate: number }) {
   const errors = a.verbs.filter((v) => !v.ok);
   return (
-    <div className="feedback">
+    <div className="card">
       <div className="fb-head">
         <ScoreBadge score={a.score} />
-        <p className="fb-summary">{a.feedback}</p>
+        <p className="body-l">{a.feedback}</p>
       </div>
 
       <section>
-        <h3>Lo que dijiste</h3>
-        <p className="transcript">{a.transcript ? highlight(a) : <em className="muted">(sin texto)</em>}</p>
+        <p className="overline">What you said</p>
+        <p className="transcript">{a.transcript ? highlight(a) : <em className="on-variant">(no text)</em>}</p>
       </section>
 
       {errors.length > 0 && (
         <section>
-          <h3>Correcciones</h3>
-          <ul className="errors">
+          <p className="overline">Corrections</p>
+          <ul className="corrections">
             {errors.map((v, i) => (
-              <li key={i}>
-                <div className="err-line">
-                  <s>{v.phrase}</s> <span aria-hidden>→</span> <strong>{v.correction}</strong>
+              <Correction key={i} wrong={v.phrase} right={v.correction} why={v.why}>
+                <div className="chips">
+                  <span className="badge bad">{tenseLabel(v.used)}</span>
+                  <Icon name="arrow_forward" size={16} className="on-variant" />
+                  <span className="badge good">{tenseLabel(v.expected)}</span>
                 </div>
-                <div className="err-meta">
-                  <span className="chip chip-bad">{tenseLabel(v.used)}</span>
-                  <span aria-hidden>→</span>
-                  <span className="chip chip-ok">{tenseLabel(v.expected)}</span>
-                </div>
-                {v.why && <p className="err-why">{v.why}</p>}
-              </li>
+              </Correction>
             ))}
           </ul>
         </section>
       )}
 
-      {errors.length > 0 && a.corrected && (
-        <section>
-          <h3>Versión corregida</h3>
-          <p className="say">
-            {a.corrected}
-            <button className="icon-btn" onClick={() => speak(a.corrected, rate)} aria-label="Escuchar versión corregida">🔊</button>
-          </p>
-        </section>
-      )}
-
+      {errors.length > 0 && a.corrected && <SayLine label="Corrected version" text={a.corrected} rate={rate} />}
       {a.natural && a.natural.trim() !== a.corrected.trim() && (
-        <section>
-          <h3>Como lo diría un PM nativo</h3>
-          <p className="say">
-            {a.natural}
-            <button className="icon-btn" onClick={() => speak(a.natural, rate)} aria-label="Escuchar versión natural">🔊</button>
-          </p>
-        </section>
+        <SayLine label="How a native PM would say it" text={a.natural} rate={rate} />
       )}
     </div>
   );

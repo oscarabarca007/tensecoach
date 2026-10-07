@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 
-/** Spinner that explains the wait once Gemini takes long (it is retrying overloads behind the scenes). */
+/** Progress indicator that explains the wait once Gemini takes long (it is retrying overloads behind the scenes). */
 export function Analyzing({
   label,
   slowNote = "Gemini está con mucha demanda; reintentando automáticamente…",
@@ -14,11 +14,11 @@ export function Analyzing({
     return () => window.clearTimeout(id);
   }, []);
   return (
-    <div className="analyzing">
+    <div className="analyzing" role="status">
       <span className="spinner" />
-      <span>
+      <span className="body-l">
         {label}
-        {slow && <small className="muted slow-note">{slowNote}</small>}
+        {slow && <span className="body-s slow-note">{slowNote}</span>}
       </span>
     </div>
   );

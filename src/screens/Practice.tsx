@@ -3,6 +3,8 @@ import { GROUPS, scenariosFor, shuffle, type GroupId } from "../data/scenarios";
 import { TENSES, type TenseId } from "../data/tenses";
 import { Analyzing } from "../components/Analyzing";
 import { Feedback } from "../components/Feedback";
+import { Icon } from "../components/Icon";
+import { ErrorBanner, FlowHeader, MicFab } from "../components/ui";
 import { Timeline } from "../components/Timeline";
 import { analyze, GeminiError, type Analysis } from "../lib/gemini";
 import { Recorder, type Recording } from "../lib/recorder";
@@ -182,17 +184,19 @@ export function Practice({
   if (done) {
     const avg = scores.length ? Math.round(scores.reduce((x, y) => x + y, 0) / scores.length) : 0;
     return (
-      <div className="screen">
-        <header className="bar">
-          <button className="link" onClick={onExit}>← Home</button>
+      <main className="page flow">
+        <header className="topbar">
+          <button className="icon-btn" onClick={onExit} aria-label="Close"><Icon name="close" /></button>
+          <h1 className="title-l" style={{ fontSize: 18 }}>{groupTitle}</h1>
         </header>
-        <div className="card center">
-          <h2>Session complete!</h2>
+        <section className="card" style={{ alignItems: "center", textAlign: "center", padding: "32px 24px" }}>
+          <span className="avatar" style={{ width: 64, height: 64 }}><Icon name="task_alt" size={32} /></span>
+          <h2 className="headline-s">Session complete!</h2>
           <p className="big-num">{avg}</p>
-          <p className="muted">Average accuracy in {scores.length} exercises · {groupTitle}</p>
-          <button className="primary" onClick={onExit}>Back to home</button>
-        </div>
-      </div>
+          <p className="body-m on-variant">Average accuracy in {scores.length} exercises</p>
+          <button className="btn btn-filled btn-lg" onClick={onExit}>Back to home</button>
+        </section>
+      </main>
     );
   }
 
@@ -202,89 +206,92 @@ export function Practice({
   const focus = result?.verbs.find((v) => !v.ok && v.expected in TENSES)?.expected as TenseId | undefined;
 
   return (
-    <div className="screen practice">
-      <header className="bar">
-        <button className="link" onClick={onExit}>← Exit</button>
-        <span className="muted small">{groupTitle} · {idx + 1}/{deck.length}</span>
-      </header>
-      <div className="progress-line"><span style={{ width: `${(idx / deck.length) * 100}%` }} /></div>
+    <main className="page flow">
+      <FlowHeader title={groupTitle ?? "Practice"} index={idx} total={deck.length} onClose={onExit} closeLabel="Close practice" />
 
-      <div className="split">
-        <div className="pane">
-          <div className="card scenario">
-            <span className="chip">{sc.context}</span>
+      <div className="grid-2">
+        <div className="stack" style={{ gap: 16 }}>
+          <section className="card">
+            <span className="chip static" style={{ alignSelf: "flex-start" }}>{sc.context}</span>
             <p className="prompt">{sc.prompt}</p>
             {repeatTarget && (
-              <p className="repeat-target">
-                Say it again: <strong>{repeatTarget}</strong>
-              </p>
+              <div className="banner">
+                <Icon name="record_voice_over" />
+                <div className="banner-body">
+                  <span className="label-l">Say it again</span>
+                  <span className="body-l">{repeatTarget}</span>
+                </div>
+              </div>
             )}
             {!hint ? (
-              <button className="link small" onClick={() => setHint(true)}>💡 Show hint</button>
+              <button className="btn btn-text" style={{ alignSelf: "flex-start", marginLeft: -12 }} onClick={() => setHint(true)}>
+                <Icon name="lightbulb" /> Show hint
+              </button>
             ) : (
-              <div className="hint">
-                {sc.starter && <p>Start with: <em>{sc.starter}</em></p>}
-                <p>Tenses: {sc.targets.map((t) => TENSES[t].name).join(" + ")}</p>
+              <div className="inset hint">
+                {sc.starter && <p className="body-m">Start with: <em>{sc.starter}</em></p>}
+                <div className="chips">
+                  {sc.targets.map((t) => <span key={t} className="badge info">{TENSES[t].name}</span>)}
+                </div>
                 <div className="only-narrow"><Timeline tense={main} compact /></div>
               </div>
             )}
-          </div>
+          </section>
 
           {error && (
-            <div className="error" role="alert">
-              <p>{error}</p>
-              {retryInput && phase !== "analyzing" && (
-                <button className="ghost" onClick={() => void run(retryInput)}>↻ Try again</button>
-              )}
-            </div>
+            <ErrorBanner
+              message={error}
+              retryLabel="Try again"
+              onRetry={retryInput && phase !== "analyzing" ? () => void run(retryInput) : undefined}
+            />
           )}
 
           {phase === "analyzing" ? (
             <Analyzing label="Checking your verb tenses…" slowNote="Gemini is very busy; retrying automatically…" />
           ) : typing && !recordingNow ? (
-            <div className="type-box">
-              <textarea
-                value={typed}
-                onChange={(e) => setTyped(e.target.value)}
-                placeholder="Type your answer in English…"
-                rows={3}
-                autoFocus
-              />
-              <div className="row">
-                <button className="ghost" onClick={() => setTyping(false)}>🎙️ Speak</button>
-                <button className="primary" onClick={submitTyped} disabled={!typed.trim()}>Check</button>
+            <div className="stack">
+              <label className="textfield">
+                <textarea
+                  value={typed}
+                  onChange={(e) => setTyped(e.target.value)}
+                  placeholder="Type your answer in English…"
+                  rows={3}
+                  autoFocus
+                  aria-label="Your answer"
+                />
+              </label>
+              <div className="row end">
+                <button className="btn btn-text" onClick={() => setTyping(false)}><Icon name="mic" /> Speak</button>
+                <button className="btn btn-filled" onClick={submitTyped} disabled={!typed.trim()}><Icon name="check" /> Check</button>
               </div>
             </div>
           ) : (
-            <div className="mic-area">
-              <button
-                className={`mic ${recordingNow ? "mic-on" : ""}`}
+            <>
+              <MicFab
+                recording={recordingNow}
+                elapsed={elapsed}
                 onClick={recordingNow ? stopRecording : phase === "feedback" ? repeat : startRecording}
-                aria-label={recordingNow ? "Stop and check" : "Record your answer"}
-              >
-                {recordingNow ? "■" : "🎙️"}
-              </button>
-              <p className="muted small">
-                {recordingNow
-                  ? `Recording… ${elapsed}s · tap to finish`
-                  : phase === "feedback"
-                  ? "Tap and say the corrected version out loud"
-                  : "Tap and answer out loud"}
-              </p>
+                idleLabel={phase === "feedback" ? "Tap and say the corrected version out loud" : "Tap and answer out loud"}
+                recordingLabel={(s) => `Recording… ${s}s · tap to finish`}
+                startAria="Record your answer"
+                stopAria="Stop and check"
+              />
               {!recordingNow && phase !== "feedback" && (
-                <button className="link small" onClick={() => setTyping(true)}>⌨️ Type instead</button>
+                <button className="btn btn-text" style={{ alignSelf: "center" }} onClick={() => setTyping(true)}>
+                  <Icon name="keyboard" /> Type instead
+                </button>
               )}
-            </div>
+            </>
           )}
 
           {phase === "feedback" && (
-            <div className="row">
-              <button className="primary wide" onClick={next}>Next →</button>
-            </div>
+            <button className="btn btn-filled btn-lg btn-block trailing-icon" onClick={next}>
+              Next <Icon name="arrow_forward" />
+            </button>
           )}
         </div>
 
-        <div className="pane side">
+        <div className="stack sticky" style={{ gap: 16 }}>
           {result && <Feedback a={result} rate={settings.voiceRate} />}
           {focus ? (
             <Timeline tense={focus} />
@@ -293,12 +300,15 @@ export function Practice({
               {result || hint ? (
                 <Timeline tense={main} />
               ) : (
-                <p className="muted placeholder">Your corrections and the tense timeline will appear here.</p>
+                <div className="placeholder">
+                  <Icon name="graphic_eq" />
+                  <span className="body-m">Your corrections and the tense timeline will appear here.</span>
+                </div>
               )}
             </div>
           )}
         </div>
       </div>
-    </div>
+    </main>
   );
 }
