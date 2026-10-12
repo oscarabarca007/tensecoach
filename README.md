@@ -21,6 +21,17 @@ Las palabras siguen repetición espaciada (cajas de Leitner): si fallas vuelve m
 si aciertas se repasa a los 1, 3, 7, 14 y 30 días. La palabra y su definición en inglés
 siempre están a la vista; el objetivo es asociarlas y usarlas al hablar.
 
+## Listening
+Conversaciones de trabajo del mundo tech y de gestión de proyectos (stand-ups, post-mortems,
+llamadas con clientes y proveedores, presupuestos, releases…), leídas con una voz distinta por
+persona usando la síntesis de voz del teléfono. Después hay 3 preguntas de opción múltiple
+(idea principal, detalle e inferencia) con la explicación en español citando la frase exacta.
+- La transcripción está **oculta por defecto** en cada situación; se puede mostrar como ayuda
+  y tocar una línea para escucharla desde ahí.
+- Velocidad 0.75× / 0.9× / 1×.
+- 10 situaciones incluidas (`src/data/listening.ts`) y un botón para que Gemini genere más
+  (1 solicitud cada una; se valida que vengan 3 preguntas con 4 opciones).
+
 ## Diseño
 Material Design 3 con la paleta de Google (claro/oscuro según el sistema), tipografía Google Sans
 e íconos Material Symbols (solo los usados, ver `index.html` y `src/components/Icon.tsx`).

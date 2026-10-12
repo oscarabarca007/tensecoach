@@ -2,6 +2,7 @@ import { GROUPS, type GroupId } from "../data/scenarios";
 import { Icon, type IconName } from "../components/Icon";
 import { groupAccuracy, tenseStats } from "../lib/stats";
 import { loadAttempts, loadDaily, streakDays, todayKey, type Settings } from "../lib/storage";
+import { allListening, loadListeningResults } from "../lib/listening";
 import { buildQueue } from "../lib/vocab";
 
 const GROUP_ICON: Record<GroupId, IconName> = {
@@ -21,7 +22,7 @@ export function Home({
 }: {
   settings: Settings;
   onStart: (g: GroupId | "mix") => void;
-  onNav: (s: "progress" | "settings" | "vocab") => void;
+  onNav: (s: "progress" | "settings" | "vocab" | "listening") => void;
 }) {
   const daily = loadDaily();
   const todayMin = Math.floor((daily[todayKey()] ?? 0) / 60);
@@ -30,6 +31,8 @@ export function Home({
   const streak = streakDays(daily, goal);
   const stats = tenseStats(loadAttempts());
   const vocabDue = buildQueue(settings.newWordsPerDay).length;
+  const listenResults = loadListeningResults();
+  const listenLeft = allListening().filter((i) => !listenResults[i.id]).length;
   const ready = !!settings.apiKey;
 
   return (
@@ -81,6 +84,15 @@ export function Home({
               <span className="body-m on-variant">Learn, pronounce and use project-management words</span>
             </span>
             <span className={`badge ${vocabDue ? "info" : "good"}`}>{vocabDue ? `${vocabDue} today` : "All done"}</span>
+          </button>
+
+          <button className="card-btn" onClick={() => onNav("listening")}>
+            <span className="avatar"><Icon name="headphones" /></span>
+            <span className="stack grow" style={{ gap: 0 }}>
+              <span className="title-m">Listening</span>
+              <span className="body-m on-variant">Real tech & PM conversations with 3 questions</span>
+            </span>
+            <span className="badge">{listenLeft ? `${listenLeft} new` : "Review"}</span>
           </button>
         </div>
 

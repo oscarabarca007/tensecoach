@@ -1,6 +1,7 @@
 import { TENSES, tenseLabel } from "../data/tenses";
 import { Correction } from "../components/Feedback";
 import { Icon } from "../components/Icon";
+import { loadListeningResults } from "../lib/listening";
 import { accuracy, lastDays, tenseStats } from "../lib/stats";
 import { loadAttempts, loadDaily, loadMistakes, type Settings } from "../lib/storage";
 import { speak } from "../lib/tts";
@@ -12,6 +13,7 @@ export function Progress({ settings }: { settings: Settings }) {
   const days = lastDays(loadDaily());
   const maxMin = Math.max(settings.dailyGoalMin, ...days.map((d) => d.min));
   const exercises = attempts.filter((a) => !a.retry).length;
+  const listened = Object.values(loadListeningResults());
 
   return (
     <main className="page">
@@ -68,6 +70,20 @@ export function Progress({ settings }: { settings: Settings }) {
               })}
             </ul>
           )}
+        </section>
+
+        <section className="card">
+          <div className="row between">
+            <h2 className="title-m">Listening</h2>
+            <Icon name="headphones" className="on-variant" />
+          </div>
+          <div className="stats" style={{ gridTemplateColumns: "repeat(2, 1fr)" }}>
+            <div className="stat"><span className="num">{listened.length}</span><span className="label-m on-variant">Situaciones</span></div>
+            <div className="stat">
+              <span className="num">{listened.length ? `${Math.round((listened.reduce((n, r) => n + r.last, 0) / (listened.length * 3)) * 100)}%` : "–"}</span>
+              <span className="label-m on-variant">Aciertos (último intento)</span>
+            </div>
+          </div>
         </section>
 
         <section className="card span-2">

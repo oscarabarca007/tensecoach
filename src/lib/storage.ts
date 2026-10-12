@@ -118,4 +118,5 @@ export function resetProgress() {
   writeJson(K.mistakes, []);
   writeJson(K.daily, {});
   writeJson("tc.vocab.progress", {});
+  writeJson("tc.listening.results", {});
 }
